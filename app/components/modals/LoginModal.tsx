@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useLoginModal from "../../hooks/useLoginModal";
 import CustomButton from "../forms/CustomButton";
-
+import { handleLogin } from "../lib/action";
 import apiService from "../../services/apiService";
 
 const LoginModal = () => {
@@ -16,9 +16,31 @@ const LoginModal = () => {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
 
+  const submitLogin = async () => {
+    const formData = {
+      email: email,
+      password: password,
+    };
+
+    const response = await apiService.post(
+      "/api/auth/login/",
+      JSON.stringify(formData)
+    );
+
+    if (response.access) {
+      handleLogin(response.user.pk, response.access, response.refresh);
+
+      loginModal.close();
+
+      router.push("/");
+    } else {
+      setErrors(response.non_field_errors);
+    }
+  };
+
   const content = (
     <>
-      <form className="space-y-4">
+      <form action={submitLogin} className="space-y-4">
         <input
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Your e-mail address"
@@ -44,7 +66,7 @@ const LoginModal = () => {
           );
         })}
 
-        <CustomButton label="Submit" onClick={() => console.log("test")} />
+        <CustomButton label="Submit" onClick={submitLogin} />
       </form>
     </>
   );
